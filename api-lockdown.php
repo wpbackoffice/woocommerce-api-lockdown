@@ -36,6 +36,12 @@ class API_Lockdown {
 		
 		// Get a list of all API Users
 		$this->get_api_users();		
+		
+		// Removes API Classes from access based on the user accessing it
+		add_filter( 'woocommerce_api_classes', array( $this, 'lockdown_api_resources' ), 1, 1 );
+		
+		// Filter Requests on a Per User basis
+		add_filter( 'woocommerce_api_check_authentication', array( $this, 'lockdown_api_auth' ), 1, 1 );
 	}
 	
 	/*
@@ -85,17 +91,15 @@ class API_Lockdown {
 	*	Advanced Rules Page Content
 	*/
 	public function admin_page_display() {
-		//delete_option( 'api-lockdown-options' );
-		//delete_option( 'api_lockdown_options' );
+
 		$options = $this->options;
 
 		if ($options == false) {
 			$options = array();
 		}
-		
+		var_dump(get_user_meta( 1 ) );
 		extract($options);
-		//var_dump($options);
-		//var_dump( get_user_meta( '1' ) );
+
 		?>
 		<h2>Advanced Rules</h2>
 		<p>Check the API Sections you'd like to prevent users from accessing.<br />
@@ -291,6 +295,98 @@ class API_Lockdown {
 		} else {
 			$this->users = false;
 		}
+	}
+	
+	/**
+	*	Get all site users with API Credentials
+	*
+	*	@param 		array 	Array of Included API Classes
+	* 	@return		mixed 	Restricted Array of Users 
+	*/
+	public function lockdown_api_resources( $classes ) {
+
+		extract( $this->options );
+		
+		// Products
+		if ( $apil_site_products == 'on' ) {
+			$pos = array_search( 'WC_API_Products', $classes );
+			unset( $classes[$pos] );
+		}
+		
+		// Orders
+		if ( $apil_site_orders == 'on' ) {
+			$pos = array_search( 'WC_API_Orders', $classes );
+			unset( $classes[$pos] );
+		}
+		
+		// Customers
+		if ( $apil_site_customers == 'on' ) {
+			$pos = array_search( 'WC_API_Customers', $classes );
+			unset( $classes[$pos] );
+		}
+		
+		// Reports
+		if ( $apil_site_reports == 'on' ) {
+			$pos = array_search( 'WC_API_Reports', $classes );
+			unset( $classes[$pos] );
+		}
+		
+		// Coupons
+		if ( $apil_site_coupons == 'on' ) {
+			$pos = array_search( 'WC_API_Coupons', $classes );
+			unset( $classes[$pos] );
+		}
+
+		return $classes;
+	}
+	
+	public function lockdown_api_auth( $user ) {
+		
+		// Check if user has passed authentication already
+		if ( isset( $user->ID ) ) {
+		
+			// Get Current End Point
+			$endpoint = WC()->api->server->path;
+			
+			// Index Request @todo Limit this request current not working.
+			if ( $endpoint === '/'  ) {
+				if ( get_user_meta( $user->ID, 'apil_user_basic', true ) == 'on' )
+					return 0;
+			}
+			
+			// Product Request
+			if ( strpos($endpoint, '/products' ) !== false  ) {
+				if ( get_user_meta( $user->ID, 'apil_user_products', true ) == 'on' )
+					return 0;
+			}
+			
+			// Order Request
+			if ( strpos($endpoint, '/order' ) !== false  ) {
+				if ( get_user_meta( $user->ID, 'apil_user_orders', true ) == 'on' )
+					return 0;
+			}
+			
+			// Product Request
+			if ( strpos($endpoint, '/customers' ) !== false  ) {
+				if ( get_user_meta( $user->ID, 'apil_user_customers', true ) == 'on' )
+					return 0;
+			}
+			
+			// Product Request
+			if ( strpos($endpoint, '/reports' ) !== false  ) {
+				if ( get_user_meta( $user->ID, 'apil_user_reports', true ) == 'on' )
+					return 0;
+			}
+		
+			// Product Request
+			if ( strpos($endpoint, '/coupons' ) !== false  ) {
+				if ( get_user_meta( $user->ID, 'apil_user_coupons', true ) == 'on' )
+					return 0;
+			}
+			
+		} 
+		
+		return $user;
 	}
 }
 
