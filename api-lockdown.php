@@ -97,13 +97,18 @@ class API_Lockdown {
 		if ($options == false) {
 			$options = array();
 		}
-		var_dump(get_user_meta( 1 ) );
+
 		extract($options);
 
 		?>
-		<h2>Advanced Rules</h2>
-		<p>Check the API Sections you'd like to prevent users from accessing.<br />
-		*Note any 'Site Wide Rules' will overwrite any user rule.</p>
+		<h2>WooCommerce API Lockdown</h2>
+		
+		<?php if ( isset( $_GET['updated'] ) and $_GET['updated'] == true ): ?>
+			<div class="updated"><p><strong>Updated Successfully</strong></p></div>
+		<?php endif; ?>
+		
+		<h3>Check the API sections you'd like to prevent users from accessing.</h3>
+		<p>*Note any 'Site Wide Rules' will overwrite any user rule.</p>
 		<form method="post" action="<?php admin_url( 'admin.php?page=api-lockdown.php' ); ?>">
 			<?php wp_nonce_field( "api-lockdown-admin-page" ); ?>
 			
@@ -111,7 +116,7 @@ class API_Lockdown {
 				<thead>
 					<tr>
 						<th></th>
-						<th>Basic Details</th>
+						<!-- <th>Basic Details</th> -->
 						<th>Products</th>
 						<th>Orders</th>
 						<th>Customers</th>
@@ -124,9 +129,11 @@ class API_Lockdown {
 					<tr>
 						<th>Site Wide Rules</th>
 						
+						<!--
 						<td><input type='checkbox' name='apil_site_basic' id='apil_site_basic'
 							<?php if ( $apil_site_basic != '' ) echo 'checked'; ?>
-						 /></td>						
+						 /></td>
+						 -->						
 						
 						<td><input type='checkbox' name='apil_site_products' id='apil_site_products'
 							<?php if ( $apil_site_products != '' ) echo 'checked'; ?>
@@ -155,9 +162,11 @@ class API_Lockdown {
 						<?php foreach( $this->users as $user ): ?>
 							<tr>
 								<th><?php echo $user->nickname ?></th>
-								<td><input type='checkbox' name='apil_user_basic_<?php echo $user->ID ?>' id='apil_user_basic_<?php echo $user->ID ?>'
+								<!--
+<td><input type='checkbox' name='apil_user_basic_<?php echo $user->ID ?>' id='apil_user_basic_<?php echo $user->ID ?>'
 									<?php if ( get_user_meta( $user->ID, 'apil_user_basic', true ) != '' ) echo 'checked'; ?>
 								 /></td>
+-->
 								<td><input type='checkbox' name='apil_user_products_<?php echo $user->ID ?>' id='apil_user_products_<?php echo $user->ID ?>'
 									<?php if ( get_user_meta( $user->ID, 'apil_user_products', true ) != '' ) echo 'checked'; ?>
 								 /></td>
@@ -349,10 +358,12 @@ class API_Lockdown {
 			$endpoint = WC()->api->server->path;
 			
 			// Index Request @todo Limit this request current not working.
+			/*
 			if ( $endpoint === '/'  ) {
 				if ( get_user_meta( $user->ID, 'apil_user_basic', true ) == 'on' )
 					return 0;
 			}
+			*/
 			
 			// Product Request
 			if ( strpos($endpoint, '/products' ) !== false  ) {
