@@ -14,6 +14,15 @@ if ( ! class_exists( 'API_Lockdown' ) ) :
 
 class API_Lockdown {
 	
+	/* API Lockdown Options */
+	public $options; 
+	
+	/* API Lockdown Options Label */
+	public $options_label = 'api_lockdown_options';
+	
+	/* API Enabled Users List */
+	public $users;
+	
 	public function __construct() {
 		
 		// Activation Hook
@@ -22,6 +31,11 @@ class API_Lockdown {
 		// Add Advanced Rules link under quantity rules
 		add_action( 'admin_menu', array( $this, 'admin_page_init' ) );
 		
+		// Load Options
+		$this->options = get_option( $this->options_label );
+		
+		// Get a list of all API Users
+		$this->get_api_users();		
 	}
 	
 	/*
@@ -34,7 +48,12 @@ class API_Lockdown {
 		if ( $options == false ) {
 		
 			$defaults = array (		
-				'api_lockdown_active'	=> '',
+				'apil_site_basic'		=> '',
+				'apil_site_products'	=> '',
+				'apil_site_orders'		=> '',
+				'apil_site_customers'	=> '',
+				'apil_site_reports'		=> '',
+				'apil_site_coupons'		=> '',
 			);
 		
 			add_option( 'api_lockdown_options', $defaults, '', false );
@@ -58,9 +77,9 @@ class API_Lockdown {
 		
 				
 		// Load action, checks for posted form
-		// add_action( "load-{$slug}", array( $this, 'admin_page') );
+		add_action( "load-{$slug}", array( $this, 'check_for_update') );
 
-	}
+  	}
 	
 	/**
 	*	Advanced Rules Page Content
@@ -68,36 +87,210 @@ class API_Lockdown {
 	public function admin_page_display() {
 		//delete_option( 'api-lockdown-options' );
 		//delete_option( 'api_lockdown_options' );
-		$options = get_option( 'api_lockdown_options' );
+		$options = $this->options;
 
 		if ($options == false) {
 			$options = array();
 		}
 		
 		extract($options);
-		var_dump($options);
+		//var_dump($options);
+		//var_dump( get_user_meta( '1' ) );
 		?>
 		<h2>Advanced Rules</h2>
+		<p>Check the API Sections you'd like to prevent users from accessing.<br />
+		*Note any 'Site Wide Rules' will overwrite any user rule.</p>
 		<form method="post" action="<?php admin_url( 'admin.php?page=api-lockdown.php' ); ?>">
 			<?php wp_nonce_field( "api-lockdown-admin-page" ); ?>
 			
-			<table class="form-table">
-				<tr>
-					<th>Activate Site Wide Rule?</th>
-					<td><input type='checkbox' name='ipq_site_rule_active' id='ipq_site_rule_active'
-						<?php if ( '' != '' ) echo 'checked'; ?>
-					 /></td>
-				</tr>
-
+			<table class="wp-list-table widefat fixed posts">
+				<thead>
+					<tr>
+						<th></th>
+						<th>Basic Details</th>
+						<th>Products</th>
+						<th>Orders</th>
+						<th>Customers</th>
+						<th>Reports</th>
+						<th>Coupons</th>
+						<th>Access</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<th>Site Wide Rules</th>
+						
+						<td><input type='checkbox' name='apil_site_basic' id='apil_site_basic'
+							<?php if ( $apil_site_basic != '' ) echo 'checked'; ?>
+						 /></td>						
+						
+						<td><input type='checkbox' name='apil_site_products' id='apil_site_products'
+							<?php if ( $apil_site_products != '' ) echo 'checked'; ?>
+						 /></td>	
+						 
+						 <td><input type='checkbox' name='apil_site_orders' id='apil_site_orders'
+							<?php if ( $apil_site_orders != '' ) echo 'checked'; ?>
+						 /></td>	
+						 
+						 <td><input type='checkbox' name='apil_site_customers' id='apil_site_customers'
+							<?php if ( $apil_site_customers != '' ) echo 'checked'; ?>
+						 /></td>	
+						 
+						 <td><input type='checkbox' name='apil_site_reports' id='apil_site_reports'
+							<?php if ( $apil_site_reports != '' ) echo 'checked'; ?>
+						 /></td>	
+						 
+						 <td><input type='checkbox' name='apil_site_coupons' id='apil_site_coupons'
+							<?php if ( $apil_site_coupons != '' ) echo 'checked'; ?>
+						 /></td>	
+						 
+						 <td></td>
+					</tr>
+					
+					<?php if ( $this->users != false ): ?>
+						<?php foreach( $this->users as $user ): ?>
+							<tr>
+								<th><?php echo $user->nickname ?></th>
+								<td><input type='checkbox' name='apil_user_basic_<?php echo $user->ID ?>' id='apil_user_basic_<?php echo $user->ID ?>'
+									<?php if ( get_user_meta( $user->ID, 'apil_user_basic', true ) != '' ) echo 'checked'; ?>
+								 /></td>
+								<td><input type='checkbox' name='apil_user_products_<?php echo $user->ID ?>' id='apil_user_products_<?php echo $user->ID ?>'
+									<?php if ( get_user_meta( $user->ID, 'apil_user_products', true ) != '' ) echo 'checked'; ?>
+								 /></td>
+								 <td><input type='checkbox' name='apil_user_orders_<?php echo $user->ID ?>' id='apil_user_orders_<?php echo $user->ID ?>'
+									<?php if ( get_user_meta( $user->ID, 'apil_user_orders', true ) != '' ) echo 'checked'; ?>
+								 /></td>
+								 <td><input type='checkbox' name='apil_user_customers_<?php echo $user->ID ?>' id='apil_user_customers_<?php echo $user->ID ?>'
+									<?php if ( get_user_meta( $user->ID, 'apil_user_customers', true ) != '' ) echo 'checked'; ?>
+								 /></td>
+								 <td><input type='checkbox' name='apil_user_reports_<?php echo $user->ID ?>' id='apil_user_reports_<?php echo $user->ID ?>'
+									<?php if ( get_user_meta( $user->ID, 'apil_user_reports', true ) != '' ) echo 'checked'; ?>
+								 /></td>
+								 <td><input type='checkbox' name='apil_user_coupons_<?php echo $user->ID ?>' id='apil_user_coupons_<?php echo $user->ID ?>'
+									<?php if ( get_user_meta( $user->ID, 'apil_user_coupons', true ) != '' ) echo 'checked'; ?>
+								 /></td>
+								 <td><?php echo get_user_meta( $user->ID, 'woocommerce_api_key_permissions', true ) ?></td>
+							</tr>
+						<?php endforeach; ?>
+					<?php endif; ?>
+					
+				</tbody>
 			</table>
 			
 			<p class="submit" style="clear: both;">
-				<input type="submit" name="Submit"  class="button-primary" value="Update Settings" />
-				<input type="hidden" name="ipq-advanced-rules-submit" value="Y" />
+				<input type="submit" name="Submit"  class="button-primary" value="Update" />
+				<input type="hidden" name="apil-advanced-rules-submit" value="Y" />
 			</p>
 		</form>
 		
 		<?php	
+	}
+	
+	/*
+	*	Check if the API Lockdown Page has been updated
+	*/	
+  	public function check_for_update() {
+	  				
+	  	if ( isset( $_POST["apil-advanced-rules-submit"] ) and $_POST["apil-advanced-rules-submit"] == 'Y' ) {
+			
+			check_admin_referer( "api-lockdown-admin-page" );
+			$this->save_settings();
+			$url_parameters = '&updated=true';
+			wp_redirect( admin_url( 'admin.php?page=api-lockdown.php' . $url_parameters ) );
+			exit;
+		}
+  	}
+	
+	/*
+	*	Save API Lockdown Settings
+	*/
+	public function save_settings() {
+		
+		if ( $this->options != false ){
+			
+			// Create Site Wide Setting Array
+			$site_wide_options_label = array(		
+				'apil_site_basic',
+				'apil_site_products',
+				'apil_site_orders',
+				'apil_site_customers',
+				'apil_site_reports',
+				'apil_site_coupons',
+			);
+			
+			// Update Site Wide Setting 
+			foreach ( $site_wide_options_label as $set ) {
+				
+				if ( isset( $_POST[ $set ] ) and $_POST[ $set ] == 'on' ) {
+					$this->options[ $set ] = 'on';
+				} else {
+					$this->options[ $set ] = '';
+				}
+				
+			}
+				
+			// Update Settings
+			$updated = update_option( $this->options_label, $this->options );
+			
+		}
+		
+		// Look for and update any user meta
+		if ( $this->users != false ) {
+			
+			// Create User Label Array
+			$user_options_labels = array(		
+				'apil_user_basic',
+				'apil_user_products',
+				'apil_user_orders',
+				'apil_user_customers',
+				'apil_user_reports',
+				'apil_user_coupons',
+			);
+			
+			// Loop through all API Users
+			foreach ( $this->users as $user ) {
+				
+				// Loop through all labels
+				foreach ( $user_options_labels as $set ) {
+					
+					$label = $set . '_' . $user->ID; 
+					
+					// Update the User's meta 
+					if ( isset( $_POST[ $label ] ) and $_POST[ $label ] == 'on' ) {
+						update_user_meta( $user->ID, $set, 'on' );
+					} else {
+						update_user_meta( $user->ID, $set, '' );
+					}
+					
+				}
+			}
+		}
+	}
+	
+	/**
+	*	Get all site users with API Credentials
+	*
+	* 	@return		mixed 	Array of Users or False if none exist
+	*/
+	public function get_api_users() {
+		
+		$args = array(
+			'meta_query' => array(
+				array(
+					'key' => 'woocommerce_api_consumer_key',
+					'value' => '',
+					'compare' => '!='
+				)
+			)
+		); 
+		
+		$users = get_users( $args );
+		
+		if ( count( $users ) > 0 ) {
+			$this->users = $users;
+		} else {
+			$this->users = false;
+		}
 	}
 }
 
