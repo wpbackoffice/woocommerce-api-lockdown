@@ -23,6 +23,7 @@ While WooCommerce's REST Api (v2.1+) allows easy integration with your favorite 
 WooCommerce API Lockdown allows you to restrict what is available through your API on a site wide or per user basis with an easy to use admin panel.
 
 Usage
+
 1. Once installed, in your WordPress backend navigate to to 'WooCommerce' -> 'API Lockdown'
 2. Select any site wide restrictions 
 3. Select any users specific restrictions
