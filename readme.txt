@@ -29,7 +29,8 @@ Usage
 3. Select any users specific restrictions
 4. Click update that that's it.
 
-What Happens when a Restricted User Tries to Gain Access
+What Happens when a Restricted User Tries to Gain Access?
+
 If a user tries to access a section they don't have access to they will simply get a Authentication Error.
 
 [Plugin's Official Documentation and Support Page](http://wpbackoffice.com/plugins/woocommerce-api-lockdown/)
