@@ -20,6 +20,8 @@ While WooCommerce's REST Api (v2.1+) allows easy integration with your favorite 
 * Coupon Codes
 * Store Reports
 
+Note* You must first manually grant a user or 3rd party access to this information by creating them an api account.
+
 WooCommerce API Lockdown allows you to restrict what is available through your API on a site wide or per user basis with an easy to use admin panel.
 
 Usage
